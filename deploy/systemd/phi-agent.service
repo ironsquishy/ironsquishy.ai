@@ -1,0 +1,12 @@
+[Unit]
+Description=Phi Agent API
+After=network.target
+
+[Service]
+User=ironsquishy
+WorkingDirectory=/opt/ironsquishy-phi-agent
+ExecStart=/opt/ironsquishy-phi-agent/.venv/bin/uvicorn app.server:app --host 127.0.0.1 --port 8080
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
