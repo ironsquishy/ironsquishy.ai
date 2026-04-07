@@ -2,13 +2,14 @@ import argparse
 import yaml
 import torch
 from datasets import load_dataset
-from peft import LoraConfig, TaskType, get_peft_model
+from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
+    BitsAndBytesConfig
 )
 
 
@@ -27,17 +28,39 @@ def main() -> None:
     train_file = cfg["train_file"]
     output_dir = cfg["output_dir"]
 
+    use_fp16 = cfg.get("fp16", True)
+    dtype = torch.float16 if use_fp16 else torch.float32
+
+    bnb_config = BitsAndBytesConfig( 
+        load_in_4bit=True, 
+        bnb_4bit_quant_type="nf4", 
+        bnb_4bit_compute_dtype=dtype, 
+        bnb_4bit_use_double_quant=True 
+    )
+
+    print("Finished setup bnb config...")
+
     tokenizer = AutoTokenizer.from_pretrained(base_model, use_fast=True)
+    print("Finished tokenizer...")
+
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-
-    dtype=torch.float16 if cfg.get("fp16", False) else torch.float32
+    
 
     model = AutoModelForCausalLM.from_pretrained(
         base_model,
-        dtype=dtype,
+        quantization_config=bnb_config,
         device_map="auto"
     )
+
+    print("Finished getting model...")
+
+    model.config.use_cache = False
+    model.gradient_checkpointing_enable()
+
+    model = prepare_model_for_kbit_training(model)
+
+    print("Finished other model configurations...")
 
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
@@ -96,6 +119,8 @@ def main() -> None:
         train_dataset=tokenized,
         data_collator=collator,
     )
+
+    torch.cuda.empty_cache()
 
     trainer.train()
     model.save_pretrained(output_dir)

@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-
+from utils.get_system_prompt import get_system_prompt
 
 def validate_messages(messages: list[dict]) -> None:
     if not isinstance(messages, list) or not messages:
@@ -15,6 +15,19 @@ def validate_messages(messages: list[dict]) -> None:
             raise ValueError(f"message {i} has invalid role")
         if not isinstance(msg.get("content"), str) or not msg["content"].strip():
             raise ValueError(f"message {i} must have non-empty content")
+
+
+def add_system_prompt(messages: list[dict]) -> list[dict]:
+    system_prompt = get_system_prompt()
+    output = []
+    for message in messages:
+        new_message = message
+        if new_message["role"] == "system":
+            new_message["content"] = system_prompt
+        
+        output.append(message)
+
+    return output
 
 
 def main() -> None:
@@ -41,6 +54,7 @@ def main() -> None:
                 row = json.loads(line)
                 messages = row["messages"]
                 validate_messages(messages)
+                messages = add_system_prompt(messages)
                 outfile.write(json.dumps({"messages": messages}, ensure_ascii=False) + "\n")
                 kept += 1
             except Exception as exc:

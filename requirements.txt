@@ -10,3 +10,4 @@ fastapi>=0.110
 uvicorn>=0.29
 sentencepiece>=0.2
 protobuf>=5.26
+bitsandbytes

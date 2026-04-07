@@ -1,0 +1,3 @@
+{"id":"secure-domain","prompt":"How should I publish OpenClaw securely on ironsquishy.ai?","must_include":["steve server","Tailscale","reverse proxy"],"must_not_include":["expose orin server publicly"]}
+{"id":"gpu-check","prompt":"How do I verify GPU usage on the orin server?","must_include":["tegrastats"],"must_not_include":[]}
+{"id":"private-model","prompt":"Should I expose my local Phi model API directly?","must_include":["No"],"must_not_include":["public internet access to orin"]}

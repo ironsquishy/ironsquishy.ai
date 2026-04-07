@@ -3,7 +3,9 @@ import json
 import yaml
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+from utils.get_system_prompt import get_system_prompt
 
 
 def load_yaml(path: str) -> dict:
@@ -38,25 +40,33 @@ def main() -> None:
     cfg = load_yaml(args.config)
     eval_rows = load_jsonl(args.eval_file)
 
-    tokenizer = AutoTokenizer.from_pretrained(cfg["base_model"], use_fast=True)
+    base_model = cfg["base_model"]
+    adapter_dir = cfg["adapter_dir"]
+
+    dtype = torch.float16
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=dtype,
+        bnb_4bit_use_double_quant=True,
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(base_model, use_fast=True)
+
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    base_model = AutoModelForCausalLM.from_pretrained(
-        cfg["base_model"],
-        torch_dtype=torch.float16,
-        device_map="auto",
-        trust_remote_code=True,
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model,
+        dtype=dtype,
+        quantization_config=quantization_config,
+        device_map={"":0}
     )
-    model = PeftModel.from_pretrained(base_model, cfg["adapter_dir"])
+    model = PeftModel.from_pretrained(model, adapter_dir)
     model.eval()
 
-    system_prompt = (
-        "You are a concise infrastructure assistant for ironsquishy.ai. "
-        "Prefer secure defaults, use the names steve server and orin server, "
-        "prefer Tailscale for private traffic, and do not recommend exposing "
-        "private model APIs publicly."
-    )
+    system_prompt = get_system_prompt()
 
     for row in eval_rows:
         prompt = render_phi_prompt(system_prompt, row["prompt"])

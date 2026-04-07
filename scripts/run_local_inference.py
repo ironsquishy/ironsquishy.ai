@@ -2,7 +2,9 @@ import argparse
 import yaml
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+
+from utils.get_system_prompt import get_system_prompt
 
 
 def load_yaml(path: str) -> dict:
@@ -26,38 +28,57 @@ def main() -> None:
 
     cfg = load_yaml(args.config)
 
-    tokenizer = AutoTokenizer.from_pretrained(cfg["base_model"], use_fast=True)
+    base_model = cfg["base_model"]
+    adapter_dir = cfg["adapter_dir"]
+
+    dtype = torch.float16
+
+    tokenizer = AutoTokenizer.from_pretrained(base_model, use_fast=True)
+
+    print("Finished tokanizing...")
+
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+    )
+
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     base = AutoModelForCausalLM.from_pretrained(
-        cfg["base_model"],
-        torch_dtype=torch.float16,
-        device_map="auto",
-        trust_remote_code=True,
+        base_model,
+        dtype=dtype,
+        quantization_config=quantization_config,
+        device_map={"":0}
     )
-    model = PeftModel.from_pretrained(base, cfg["adapter_dir"])
+
+    print("Finished getting model...")
+
+    model = PeftModel.from_pretrained(base, adapter_dir)
     model.eval()
 
-    system_prompt = (
-        "You are the infrastructure assistant for ironsquishy.ai. "
-        "Use the names steve server and orin server. "
-        "Prefer secure defaults and private Tailscale traffic."
-    )
+    system_prompt = get_system_prompt()
 
     prompt = render_phi_prompt(system_prompt, args.prompt)
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
+    print("Finished model load...")
     with torch.no_grad():
         output = model.generate(
             **inputs,
             max_new_tokens=300,
-            temperature=0.2,
+            temperature=0.3,
             top_p=0.9,
             do_sample=True,
         )
+    print("Finished generating output")
 
-    print(tokenizer.decode(output[0], skip_special_tokens=True))
+    decoded = tokenizer.decode(output[0], skip_special_tokens=True)
+    # response = decoded.split("<|assistant|>")[-1].strip()
+    # print(tokenizer.decode(output[0], skip_special_tokens=True))
+    print(decoded)
 
 
 if __name__ == "__main__":
