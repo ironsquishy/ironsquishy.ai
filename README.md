@@ -38,7 +38,7 @@ Test example:
 curl http://127.0.0.1:8080/health
 curl -X POST http://127.0.0.1:8080/prompt-preview \
   -H "Content-Type: application/json" \
-  -d '{"prompt":"How should I expose OpenClaw securely?"}'
+  -d '{"prompt":"How do nerual networks work?"}'
 ```
 
 ### Run it as a local inference project on a stronger machine
@@ -49,7 +49,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/run_local_inference.py \
   --config configs/inference.yaml \
-  --prompt "How should I publish OpenClaw on ironsquishy.ai?"
+  --prompt "Give me a brief explanation about AI LLMs?"
 ```
 
 ### Run it as a LoRA fine-tuning project
@@ -58,10 +58,12 @@ python scripts/run_local_inference.py \
 python scripts/prepare_data.py \
   --input data/raw/sample_conversations.jsonl \
   --output data/processed/train.jsonl
-
+```
+```
 # Train
 python scripts/train_lora.py --config configs/training.yaml
-
+```
+```
 #Eval
 python scripts/evaluate.py \
   --config configs/inference.yaml \

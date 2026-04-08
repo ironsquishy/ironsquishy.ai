@@ -1,13 +1,10 @@
-base_model: "microsoft/Phi-3-mini-4k-instruct"
-tokenizer_name: "microsoft/Phi-3-mini-4k-instruct"
-torch_dtype: "float16"
+base_model: "google/gemma-4-E2B-it"
+tokenizer_name: "google/gemma-4-E2B-it"
+dtype: "float16"
 
 lora:
-  r: 16
-  alpha: 32
+  r: 8
+  alpha: 16
   dropout: 0.05
   target_modules:
-    - qkv_proj
-    - o_proj
-    - gate_up_proj
-    - down_proj
+    - TO_BE_CONFIRMED_FOR_GEMMA4

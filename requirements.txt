@@ -1,5 +1,5 @@
 torch>=2.2
-transformers>=4.40
+transformers>=5.0.0
 datasets>=2.18
 peft>=0.10
 trl>=0.8
@@ -11,3 +11,4 @@ uvicorn>=0.29
 sentencepiece>=0.2
 protobuf>=5.26
 bitsandbytes
+accelerate
