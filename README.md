@@ -8,7 +8,7 @@ A modular framework for training, evaluating, and deploying custom LLM agents us
 
 This project enables you to:
 
-* Fine-tune open-source LLMs (Gemma-based currently)
+* Fine-tune open-source LLMs (Gemma-based)
 * Run local inference with or without adapters
 * Support multiple environments:
 
@@ -21,8 +21,9 @@ This project enables you to:
 
 ## 📦 Repository Structure
 
-```id="repo-structure"
+```text id="repo-structure"
 ironsquishy.ai/
+├── Makefile        # Workflow shortcuts + environment checks
 ├── configs/        # Base + environment-specific configs
 ├── scripts/        # Training, inference, evaluation, export
 ├── utils/          # Shared logic (runtime, model loading, prompts)
@@ -38,7 +39,7 @@ ironsquishy.ai/
 
 ### 1. Create virtual environment
 
-```id="setup-venv"
+```bash id="setup-venv"
 python -m venv .venv
 source .venv/bin/activate
 pip install -U pip
@@ -48,168 +49,149 @@ pip install -U pip
 
 ### 2. Install dependencies
 
-#### ✅ Base install (works everywhere)
+#### ✅ Base (all platforms)
 
-```id="install-base"
+```bash id="install-base"
 pip install -r requirements.txt
 ```
 
----
-
 #### 🚀 CUDA (recommended for training)
 
-```id="install-cuda"
+```bash id="install-cuda"
 pip install -r requirements-cuda.txt
 ```
 
----
-
 #### 🧪 Dev tools (optional)
 
-```id="install-dev"
+```bash id="install-dev"
 pip install -r requirements-dev.txt
 ```
 
 ---
 
-## 🧠 Dependency Strategy
+## 🩺 Environment Check (`make doctor`)
 
-This repo uses a **split dependency model**:
+Before running anything, verify your environment:
 
-| File                    | Purpose                          |
-| ----------------------- | -------------------------------- |
-| `requirements.txt`      | Cross-platform core dependencies |
-| `requirements-cuda.txt` | CUDA-only extras (bitsandbytes)  |
-| `requirements-dev.txt`  | Testing / linting                |
+```bash id="run-doctor"
+make doctor
+```
 
-### Why this matters
+### What it checks
 
-* Avoids CUDA-only install failures on Mac
-* Keeps environments lightweight
-* Makes debugging easier
-
----
-
-## ⚡ Quick Start
+* Python + pip setup
+* Core libraries (`torch`, `transformers`, etc.)
+* CUDA availability and GPU detection
+* Apple MPS support
+* CUDA toolkit (`nvcc`)
+* Project structure (configs, scripts, utils)
 
 ---
 
-### 🔹 Test base model (no adapter)
+### When to use it
 
-Always verify this first.
+Run this if:
 
-#### macOS / MPS
+* training fails
+* inference is slow or broken
+* CUDA is not detected
+* adapter behaves incorrectly
+* switching machines (WSL ↔ Mac ↔ CPU)
 
-```id="run-base-mps"
-python scripts/run_local_inference.py \
-  --config configs/inference/mps.yaml \
-  --prompt "Explain caching in distributed systems" \
-  --device mps \
-  --base-only
+---
+
+## ⚡ Quick Start (Makefile)
+
+### See all commands
+
+```bash id="make-help"
+make help
 ```
 
 ---
 
-#### CUDA
+## 🧪 Test Base Model (No Adapter)
 
-```id="run-base-cuda"
-python scripts/run_local_inference.py \
-  --config configs/inference/cuda.yaml \
-  --prompt "Explain caching in distributed systems" \
-  --device cuda \
-  --base-only
+Always do this first.
+
+```bash id="base-infer"
+make base-infer DEVICE=mps PROMPT="Explain caching in distributed systems"
 ```
 
 ---
 
 ## 🏋️ Training
 
----
-
 ### Prepare data
 
-```id="prepare-data"
-python scripts/prepare_data.py \
-  --input data/raw/sample_conversations.jsonl \
-  --output data/processed/train.jsonl
+```bash id="prepare-data"
+make prepare-data
 ```
 
 ---
 
 ### Train (CUDA)
 
-```id="train-cuda"
-python scripts/train_lora.py \
-  --config configs/training/cuda.yaml \
-  --device cuda
+```bash id="train-cuda"
+make train DEVICE=cuda
 ```
 
 ---
 
 ### Train (Mac debug only)
 
-```id="train-mps"
-python scripts/train_lora.py \
-  --config configs/training/mps.yaml \
-  --device mps
+```bash id="train-mps"
+make train DEVICE=mps
 ```
 
 ---
 
 ## 🤖 Inference (with adapter)
 
-```id="run-inference"
-python scripts/run_local_inference.py \
-  --config configs/inference/cuda.yaml \
-  --prompt "How do I design a scalable API?" \
-  --device cuda
+```bash id="infer"
+make infer DEVICE=cuda PROMPT="How do I design a scalable API?"
 ```
 
 ---
 
 ## 🧪 Evaluation
 
-```id="evaluate"
-python scripts/evaluate.py \
-  --config configs/inference/cuda.yaml \
-  --eval-file data/eval/eval_prompts.jsonl
+```bash id="eval"
+make eval DEVICE=cuda
 ```
 
 ---
 
 ## 🔧 Merge Adapter
 
-```id="merge-adapter"
-python scripts/merge_adapter.py \
-  --base-model google/gemma-4-E2B-it \
-  --adapter adapters/latest \
-  --output merged_model/
+```bash id="merge"
+make merge
 ```
 
 ---
 
-## 📦 Export (GGUF)
+## 📦 Export to GGUF
 
-```id="export-gguf"
-bash scripts/export_gguf.sh
+```bash id="export"
+make export
 ```
 
 ---
 
 ## 🧠 Config System
 
-This repo uses **config inheritance**.
+This repo uses config inheritance.
 
 ### Base configs
 
-```id="base-configs"
+```text id="base-configs"
 configs/base/training.yaml
 configs/base/inference.yaml
 ```
 
-### Environment overrides
+### Environment configs
 
-```id="env-configs"
+```text id="env-configs"
 configs/training/cuda.yaml
 configs/training/mps.yaml
 configs/training/cpu.yaml
@@ -221,7 +203,7 @@ configs/inference/cpu.yaml
 
 Loaded via:
 
-```id="load-config"
+```text id="load-config"
 utils/load_config.py
 ```
 
@@ -229,9 +211,9 @@ utils/load_config.py
 
 ## 🧩 Utilities
 
-Key shared modules:
+Core shared modules:
 
-```id="utils"
+```text id="utils"
 resolve_runtime.py
 load_base_model.py
 load_tokenizer.py
@@ -244,41 +226,39 @@ get_generation_kwargs.py
 
 ## 🧪 Debugging
 
----
+### Run without adapter
 
-### Test without adapter
-
-```id="debug-base"
---base-only
+```bash id="debug-base"
+make base-infer DEVICE=cpu PROMPT="What is caching?"
 ```
 
 ---
 
 ### Common issues
 
-#### Adapter gives empty output
+#### Adapter produces bad or empty output
 
 * Adapter likely mismatched with base model
 * Fix: retrain with same base model
 
 ---
 
-#### CUDA not found (WSL)
+#### CUDA not detected
 
-```id="check-cuda"
+```bash id="check-cuda"
 nvcc --version
 ```
 
-Install CUDA toolkit if missing.
+If missing → install CUDA toolkit in WSL/Linux.
 
 ---
 
 #### Slow Mac inference
 
 * Expected (no CUDA / no 4-bit)
-* Reduce tokens:
+* Reduce tokens in config:
 
-```id="reduce-tokens"
+```yaml id="reduce-tokens"
 max_new_tokens: 64
 ```
 
@@ -286,23 +266,24 @@ max_new_tokens: 64
 
 #### NaN / invalid generation
 
-```id="safe-generation"
-do_sample=False
-remove_invalid_values=True
+```yaml id="safe-gen"
+do_sample: false
+remove_invalid_values: true
 ```
 
 ---
 
 ## 🔥 Recommended Workflow
 
-```id="workflow"
-1. Run base model (no adapter)
-2. Verify prompt + output
-3. Train adapter (CUDA)
-4. Test adapter inference
-5. Evaluate model
-6. Merge + export
-7. Deploy
+```text id="workflow"
+1. make doctor
+2. make base-infer
+3. make prepare-data
+4. make train DEVICE=cuda
+5. make infer DEVICE=cuda
+6. make eval
+7. make merge
+8. make export
 ```
 
 ---
