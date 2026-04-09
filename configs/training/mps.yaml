@@ -1,0 +1,11 @@
+inherits: "configs/base/training.yaml"
+
+num_train_epochs: 1
+
+device_overrides:
+  mps:
+    max_length: 256
+    per_device_train_batch_size: 1
+    gradient_accumulation_steps: 8
+    use_4bit: false
+    fp16: false

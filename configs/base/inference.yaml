@@ -1,5 +1,6 @@
 base_model: "google/gemma-4-E2B-it"
 adapter_dir: "adapters/latest"
+
 max_new_tokens: 300
 temperature: 0.3
 top_p: 0.9
