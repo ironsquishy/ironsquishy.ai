@@ -23,23 +23,24 @@ This project enables you to:
 
 ```text id="repo-structure"
 ironsquishy.ai/
-├── Makefile        # Workflow shortcuts + environment checks
-├── configs/        # Base + environment-specific configs
-├── scripts/        # Training, inference, evaluation, export
-├── utils/          # Shared logic (runtime, model loading, prompts)
+├── Makefile        # Primary workflow commands
+├── Dockerfile      # Containerized environment
+├── configs/        # Base + environment configs
+├── scripts/        # Training, inference, evaluation
+├── utils/          # Shared runtime + helpers
 ├── data/           # Raw + processed datasets
-├── prompts/        # System prompts / personalities
-├── deploy/         # Deployment configs
-└── adapters/       # Saved LoRA adapters
+├── prompts/        # System prompts
+├── adapters/       # LoRA adapters
+└── requirements*.txt
 ```
 
 ---
 
-## ⚙️ Installation
+# ⚙️ Local Setup (Recommended First)
 
-### 1. Create virtual environment
+## 1. Create virtual environment
 
-```bash id="setup-venv"
+```bash id="venv"
 python -m venv .venv
 source .venv/bin/activate
 pip install -U pip
@@ -47,62 +48,35 @@ pip install -U pip
 
 ---
 
-### 2. Install dependencies
+## 2. Install dependencies
 
-#### ✅ Base (all platforms)
+### Base
 
 ```bash id="install-base"
 pip install -r requirements.txt
 ```
 
-#### 🚀 CUDA (recommended for training)
+### CUDA (recommended)
 
 ```bash id="install-cuda"
 pip install -r requirements-cuda.txt
 ```
 
-#### 🧪 Dev tools (optional)
-
-```bash id="install-dev"
-pip install -r requirements-dev.txt
-```
-
 ---
 
-## 🩺 Environment Check (`make doctor`)
+# 🩺 Environment Check
 
-Before running anything, verify your environment:
-
-```bash id="run-doctor"
+```bash id="doctor"
 make doctor
 ```
 
-### What it checks
-
-* Python + pip setup
-* Core libraries (`torch`, `transformers`, etc.)
-* CUDA availability and GPU detection
-* Apple MPS support
-* CUDA toolkit (`nvcc`)
-* Project structure (configs, scripts, utils)
+Use this before running anything.
 
 ---
 
-### When to use it
+# ⚡ Makefile Workflow
 
-Run this if:
-
-* training fails
-* inference is slow or broken
-* CUDA is not detected
-* adapter behaves incorrectly
-* switching machines (WSL ↔ Mac ↔ CPU)
-
----
-
-## ⚡ Quick Start (Makefile)
-
-### See all commands
+## Show commands
 
 ```bash id="make-help"
 make help
@@ -110,19 +84,15 @@ make help
 
 ---
 
-## 🧪 Test Base Model (No Adapter)
-
-Always do this first.
+## Test base model (IMPORTANT)
 
 ```bash id="base-infer"
-make base-infer DEVICE=mps PROMPT="Explain caching in distributed systems"
+make base-infer DEVICE=mps PROMPT="Explain caching"
 ```
 
 ---
 
-## 🏋️ Training
-
-### Prepare data
+## Prepare data
 
 ```bash id="prepare-data"
 make prepare-data
@@ -130,23 +100,15 @@ make prepare-data
 
 ---
 
-### Train (CUDA)
+## Train
 
-```bash id="train-cuda"
+```bash id="train"
 make train DEVICE=cuda
 ```
 
 ---
 
-### Train (Mac debug only)
-
-```bash id="train-mps"
-make train DEVICE=mps
-```
-
----
-
-## 🤖 Inference (with adapter)
+## Inference (adapter)
 
 ```bash id="infer"
 make infer DEVICE=cuda PROMPT="How do I design a scalable API?"
@@ -154,7 +116,7 @@ make infer DEVICE=cuda PROMPT="How do I design a scalable API?"
 
 ---
 
-## 🧪 Evaluation
+## Evaluate
 
 ```bash id="eval"
 make eval DEVICE=cuda
@@ -162,7 +124,7 @@ make eval DEVICE=cuda
 
 ---
 
-## 🔧 Merge Adapter
+## Merge adapter
 
 ```bash id="merge"
 make merge
@@ -170,7 +132,7 @@ make merge
 
 ---
 
-## 📦 Export to GGUF
+## Export GGUF
 
 ```bash id="export"
 make export
@@ -178,20 +140,14 @@ make export
 
 ---
 
-## 🧠 Config System
+# 🧠 Config System
 
-This repo uses config inheritance.
+Configs use inheritance.
 
-### Base configs
-
-```text id="base-configs"
+```text id="configs"
 configs/base/training.yaml
 configs/base/inference.yaml
-```
 
-### Environment configs
-
-```text id="env-configs"
 configs/training/cuda.yaml
 configs/training/mps.yaml
 configs/training/cpu.yaml
@@ -201,34 +157,13 @@ configs/inference/mps.yaml
 configs/inference/cpu.yaml
 ```
 
-Loaded via:
-
-```text id="load-config"
-utils/load_config.py
-```
-
 ---
 
-## 🧩 Utilities
-
-Core shared modules:
-
-```text id="utils"
-resolve_runtime.py
-load_base_model.py
-load_tokenizer.py
-build_prompt.py
-validate_adapter.py
-get_generation_kwargs.py
-```
-
----
-
-## 🧪 Debugging
+# 🧪 Debugging Tips
 
 ### Run without adapter
 
-```bash id="debug-base"
+```bash id="debug"
 make base-infer DEVICE=cpu PROMPT="What is caching?"
 ```
 
@@ -236,44 +171,96 @@ make base-infer DEVICE=cpu PROMPT="What is caching?"
 
 ### Common issues
 
-#### Adapter produces bad or empty output
-
-* Adapter likely mismatched with base model
-* Fix: retrain with same base model
-
----
-
-#### CUDA not detected
-
-```bash id="check-cuda"
-nvcc --version
-```
-
-If missing → install CUDA toolkit in WSL/Linux.
+* Adapter mismatch → retrain
+* CUDA missing → install toolkit
+* Mac slow → expected (no 4-bit)
+* NaN outputs → disable sampling
 
 ---
 
-#### Slow Mac inference
+# 🐳 Docker (Optional but Recommended for Consistency)
 
-* Expected (no CUDA / no 4-bit)
-* Reduce tokens in config:
+Docker provides a reproducible environment and avoids dependency issues.
 
-```yaml id="reduce-tokens"
-max_new_tokens: 64
+---
+
+## 1. Create `.env`
+
+```dotenv id="env"
+DEVICE=cpu
+PROMPT=Explain caching in distributed systems
+BASE_MODEL=google/gemma-4-E2B-it
+TRANSFORMERS_CACHE=/app/.cache
 ```
 
 ---
 
-#### NaN / invalid generation
+## 2. Build image
 
-```yaml id="safe-gen"
-do_sample: false
-remove_invalid_values: true
+```bash id="docker-build"
+docker build -t ironsquishy-ai .
 ```
 
 ---
 
-## 🔥 Recommended Workflow
+## 3. Run environment check
+
+```bash id="docker-doctor"
+docker run --rm -it \
+  --env-file .env \
+  -v "$(pwd):/app" \
+  ironsquishy-ai \
+  make doctor
+```
+
+---
+
+## 4. Run inference
+
+```bash id="docker-infer"
+docker run --rm -it \
+  --env-file .env \
+  -v "$(pwd):/app" \
+  ironsquishy-ai \
+  make infer
+```
+
+---
+
+## 5. Train
+
+```bash id="docker-train"
+docker run --rm -it \
+  --env-file .env \
+  -v "$(pwd):/app" \
+  ironsquishy-ai \
+  make train
+```
+
+---
+
+## 6. Override variables
+
+```bash id="docker-override"
+docker run --rm -it \
+  --env-file .env \
+  -e DEVICE=cuda \
+  -v "$(pwd):/app" \
+  ironsquishy-ai \
+  make infer PROMPT="Explain vector databases"
+```
+
+---
+
+## 🧠 Notes on Docker
+
+* `.env` is passed via `--env-file`
+* `-v $(pwd):/app` mounts your project (no rebuild needed)
+* Use CUDA Docker separately if needed (`--gpus all`)
+
+---
+
+# 🔥 Recommended Workflow
 
 ```text id="workflow"
 1. make doctor
@@ -288,16 +275,16 @@ remove_invalid_values: true
 
 ---
 
-## ⚠️ Important Rules
+# ⚠️ Important Rules
 
 * Adapter must match base model
 * Prompt format must match training
-* CUDA required for efficient training
-* Mac is for debugging, not heavy training
+* CUDA required for real training
+* Mac is for debugging only
 
 ---
 
-## 🧭 Future Goals
+# 🧭 Future Goals
 
 * GGUF optimization
 * OpenClaw integration
@@ -305,7 +292,7 @@ remove_invalid_values: true
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 Allen Space
 Project: ironsquishy.ai

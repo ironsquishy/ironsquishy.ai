@@ -61,7 +61,7 @@ Personality:
 """
 
 def get_system_prompt():
-    base_dir = Path(__file__).resolve().parent.parent.parent
+    base_dir = Path(__file__).resolve().parent.parent
 
     system_prompt_file_path = base_dir / "prompts" / "system.prompt.md"
 
