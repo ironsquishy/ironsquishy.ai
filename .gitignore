@@ -224,3 +224,4 @@ data/processed/*
 !data/processed/.gitkeep
 *.log
 checkpoints/
+models/*

@@ -1,0 +1,9 @@
+inherits: "configs/base/inference.yaml"
+
+base_model: "google/gemma-4-E4B-it"
+adapter_dir: "adapters/gemma4-e4b-latest"
+
+max_new_tokens: 300
+temperature: 0.3
+top_p: 0.9
+do_sample: true

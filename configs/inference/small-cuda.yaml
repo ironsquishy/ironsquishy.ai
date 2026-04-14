@@ -1,0 +1,9 @@
+inherits: "configs/base/inference.yaml"
+
+base_model: "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+adapter_dir: "adapters/tinyllama-latest"
+
+max_new_tokens: 256
+temperature: 0.3
+top_p: 0.9
+do_sample: true

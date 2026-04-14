@@ -69,7 +69,7 @@ def main() -> None:
         model = base
     else:
         print("[adapter] Validating adapter")
-        validate_adapter(adapter_dir)
+        validate_adapter(adapter_dir, base_model)
         print("[adapter] Adapter validation successful")
 
         print("[adapter] Loading adapter onto base model")
