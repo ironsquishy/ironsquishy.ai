@@ -9,20 +9,20 @@ MODEL_DIR ?= $(PROJECT_ROOT)/models
 # -------------------------
 # llama.cpp Docker runtime
 # -------------------------
-LLAMA_IMAGE ?= ghcr.io/ggml-org/llama.cpp:server-cuda13
+LLAMA_IMAGE ?= ghcr.io/ggml-org/llama.cpp:server-cuda
 LLAMA_PORT ?= 8080
 
 # Safer first model
 E4B_MODEL ?= $(MODEL_DIR)/gemma-4-e4b-it.Q4_K_M.gguf
 E4B_CTX ?= 4096
 E4B_BATCH ?= 512
-E4B_NGL ?= 99
+E4B_NGL ?= 60
 
 # Larger model
 LARGE_MODEL ?= $(MODEL_DIR)/gemma-4-26b-a4b-it.Q4_K_M.gguf
-LARGE_CTX ?= 2048
+LARGE_CTX ?= 16384
 LARGE_BATCH ?= 256
-LARGE_NGL ?= 99
+LARGE_NGL ?= 20
 
 LLAMA_CONTAINER ?= goliath-llama
 
@@ -32,7 +32,7 @@ llama-pull:
 	@echo "[make] Pulling llama.cpp Docker image..."
 	docker pull $(LLAMA_IMAGE)
 
-llama-run-e4b:
+llama-run-small:
 	@echo "[make] Starting llama.cpp server with E4B model..."
 	docker rm -f $(LLAMA_CONTAINER) 2>/dev/null || true
 	docker run -d \
